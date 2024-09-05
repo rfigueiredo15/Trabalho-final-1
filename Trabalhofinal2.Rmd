@@ -1,0 +1,154 @@
+---
+title: "Senado Federal e Aprovações de Autoridades Indicadas Pelo Presidente da República"
+output: pdf_document
+author: Rafaela B. M. Figueiredo Freire
+date: "2024-09-05"
+---
+# RESUMO 
+
+O papel do Senado Federal no processo de aprovação de autoridades tem sido questionado quanto à sua atuação ativa ou deferente. Por muito tempo, a literatura considerou o papel do Senado Federal como deferente, dada a alta taxa de aprovação. Porém, uma literatura mais recente tem questionado se, de fato, esse papel não precisa ser visto considerando outras etapas do processo, por exemplo, que as preferências dos senadores são observadasantecipadamente para que nomes vencedores sejam indicados, ou considerando o tempo de tramitação nesse processo, e não somente a taxa de aprovação ou rejeição. Dessa forma, iremos observar o tempo de tramitação de aprovação de dois grupos de autoridades: diretores de agências nacionais e embaixadores. 
+Tais grupos foram escolhidos considerando a importância para a governabilidade. 
+
+A hipótese levantada nesse trabalho é a de que os cargos de diretores serão mais rapidamente aprovados dada a necessidade de governabilidade desse cargo em contraponto com o cargo de embaixadores. Como veremos a seguir, de fato essa hipótese se confirma, sendo o tempo de tramitação dos cargos de diretores consideravelmente inferior ao dos embaixadores.
+
+# INTRODUÇÃO
+
+Esse trabalho pretende fazer uma contribuição aos estudos a respeito do Senado Federal brasileiro, tendo em vista que é um assunto ainda pouco explorado. Parte da literatura enfatiza a fraqueza do Poder Legislativo comparado à força exercida pelo Poder Executivo (Figueiredo, 2001; Eaton, 2001; Mustapic, 2001; Loureiro, 2001; Siavelis, 2000), por vezes representando a aprovação pelo Senado Federal de nomeados pelo Poder Executivo como apenas uma formalidade, não cumprindo, assim, sua função de forma completa (Harris, 1968)  .
+
+Em contraponto, há estudos que assumem o Legislativo como ator com grande força política, evidenciando o papel fundamental do Senado Federal (SF) para a estabilidade do governo e reconhecendo o papel na área econômica da Casa (Neiva, 2011); além disso, assumem que os interesses da casa alta se não considerados na própria casa, são considerados em outras etapas do processo decisório (Araújo, 2014). Segundo Llanos e Lemos (2005), a taxa de aprovação de autoridades pelo SF é mais alta que 90%, o que não significa que a Casa não cumpra sua função, mas que o tempo entre aprovação e nomeação indica que há negociação com o Senado Federal. Esse trabalho pretende verificar a efetividade de tais explicações e investigar a atuação do Senado nas nomeações pelo poder Executivo por um período de 2010 até 2019, comparando o processo de aprovação dos cargos de embaixadores e diretores das agências. 
+
+# MÉTODO
+
+O método utilizado foi o método quantitativo, realizando o teste T na base de dados. Os dados foram coletados do site do Senado Federal manualmente. Foram tilizados dados do processo de aprovação de autoridades indicadas pelo Presidente da República e sabatinados pelo Senado Federal no período de 2009 até 2019. Inicialmente, o banco de dados possuía 621 cargos aprovados, mas para esta análise, foram selecionados os cargos de embaixadores e diretores das agências nacionais, totalizando 486. 
+
+As variáveis selecionadas dentro do banco de dados foram "cargo", se embaixadores ou diretores, e "tempo de tramitação". Como a quantidade de cargo de embaixadores mostrou-se muito superior à de diretores, ao realizar o test T foi necessário utilizar o teste T de Welch, uma vez que a variância não é homogênea entre os grupos observados. 
+
+Além disso, a base de dados foi tratada anteriormente no sistema RStudio. 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#Trabalhando os dados:
+
+#Baixando os pacotes
+pacman::p_load(haven, tidyverse, readxl, dplyr, foreign, rmarkdown, ggplot2, janitor)
+
+# Definir o espelho do CRAN
+options(repos = c(CRAN = "https://cran.r-project.org"))
+
+#Baixando a base de dados (trabalhada e aprimorada em outras tarefas deste curso)
+library(readxl)
+Dados_tcc_2010_2019 <- read_excel("~/Desktop/Dados tcc - 2010 - 2019.xlsx", 
+    col_types = c("text", "text", "date", 
+        "date", "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric"))
+View(Dados_tcc_2010_2019)
+
+#Delimitando os dados para essa apresentação - média do tempo de tramitação em cargos como de Diretores
+
+Diretores <- Dados_tcc_2010_2019 %>%
+  filter(grepl("diretor", Cargo, ignore.case = TRUE))
+view(Diretores)
+
+install.packages("tidyverse")
+
+Diretores <- clean_names(Diretores)
+
+media_tempo <- Diretores %>%
+  summarise(media = mean(tempo_de_tramitacao_dias_ate_a_aprovacao, na.rm = TRUE))
+view(media_tempo)
+
+#Resultado: 37.16556
+
+Embaixadores <- Dados_tcc_2010_2019 %>%
+  filter(grepl("embaixador", Cargo, ignore.case =TRUE))
+view(Embaixadores)
+Embaixadores <- clean_names(Embaixadores)
+media_tempo2 <- Embaixadores %>%
+  summarise(media = mean (tempo_de_tramitacao_dias_ate_a_aprovacao, na.rm = TRUE))
+view(media_tempo2)
+
+#Resultado: 70.70149
+
+# Verificar estrutura dos dados
+str(Diretores)
+str(Embaixadores)
+
+# Adicionar uma coluna identificando o grupo
+Diretores <- Diretores %>% mutate(grupo = "Diretores")
+Embaixadores <- Embaixadores %>% mutate(grupo = "Embaixadores")
+
+# Combinar os dados
+dados_combinados <- bind_rows(Diretores, Embaixadores)
+
+# Realizar o teste t de duas amostras
+resultado_teste <- t.test(tempo_de_tramitacao_dias_ate_a_aprovacao ~ grupo, data = dados_combinados)
+
+# Exibir os resultados do teste t
+print(resultado_teste)
+
+#Welch Two Sample t-test
+
+#data:  tempo_de_tramitacao_dias_ate_a_aprovacao by grupo
+#t = -9.8157, df = 336.77, p-value < 2.2e-16
+#alternative hypothesis: true difference in means between group Diretores and group Embaixadores is not equal to 0
+#95 percent confidence interval:
+ -40.25640 -26.81545
+#sample estimates:
+#   mean in group Diretores mean in group Embaixadores 
+#                  37.16556                   70.70149 
+```
+```
+```{r cars, echo = FALSE}
+
+# Realizar o teste t de duas amostras
+resultado_teste <- t.test(tempo_de_tramitacao_dias_ate_a_aprovacao
+                          ~ grupo, data = dados_combinados)
+# Exibir os resultados do teste t
+print(resultado_teste)
+
+```
+
+# ANÁLISE
+
+```{r pressure, echo = FALSE}
+
+ggplot(dados_combinados, aes(x = grupo, y = tempo_de_tramitacao_dias_ate_a_aprovacao, fill = grupo)) +
+  geom_boxplot(outlier.colour = "red", outlier.size = 2) +
+  labs(
+    title = "Tempo de Tramitação por Cargo",
+    x = "Cargo",
+    y = "Tempo de Tramitação (dias)"
+  ) +
+  theme_minimal() +
+  scale_fill_manual(values = c("Diretores" = "blue", "Embaixadores" = "green"))
+
+```
+
+
+O teste T comparou a média dos dois grupos propostos: diretores e embaixadores, da variável tempo de tramitação. Como falado anteriormente, o teste T de Welch foi usado pois a variância dos dois grupos não são homogêneas, sendo as aprovações de diretores 151, e de embaixadores 335. 
+
+## Valores do teste: 
+
+t = -9.8157: é o valor estatístico entrado no teste T, que representa a diferença entre as médias dos dois grupos. O sinal negativo indica que a média do grupo "Diretores" é menor do que a do grupo "Embaixadores", sendo de aproximadamente 37 dias, enquanto do segundo grupo de, aproximadamente, 70 dias. 
+
+df = 336.77: é o número de graus de liberdade associado ao teste.
+
+p-value < 2.2e-16: O valor-p (p-value) é extremamente pequeno, indicando que há evidências muito fortes contra a hipótese nula, ou seja, a diferença entre as médias dos dois grupos é estatisticamente significativa.
+
+Intervalo de confiança de 95%:-40.25640 -26.81545: o resultado negativo sugere que um grupo tem a média significativamente menor comparado ao outro, e resulta em 95% de confiança de que, de fato, o intervalo está entre estes números. 
+
+## Estimativa média dos grupos: 
+
+A média do tempo de tramitação para o grupo "Diretores" = 37.16556
+A média do tempo de tramitação para o grupo "Embaixadores" = 70.70149
+
+## Análise dos resultados:
+
+Resumindo, o teste revela que há uma diferença estatisticamente significativa entre os tempos de tramitação até a aprovação dos dois grupos. O grupo "Diretores" tem uma média de tempo menor do que o grupo "Embaixadores", e a diferença é bastante significativa.
+
+# CONCLUSÕES
+
+Caminhando na mesma direção dos estudos apontados por Mariana Llanos e Leany Lemos, a aprovação de embaixadores mostrou-se um processo mais demorado que a aprovação de diretores das agências nacionais. Segundo as autoras, esse resultado pode indicar que há uma hierarquia entre as indicações políticas, uma vez que a demora no processo de aprovação dos diretores seria mais danosa ao Executivo que no processo de indicação dos embaixaodes. Nesse caso, o presidente preveria a reação do Senado Federal, enviando nomes mais consensuais, e as negociações poderiam começar antes que a mensagem de indicação do nome seja enviada. 
+
+Assim, a hipótese levantada, de que os cargos de diretores serão mais rapidamente aprovados dada a necessidade de governabilidade desse cargo em contraponto com o cargo de embaixadores, provou-se verdadeira para os anos de 2010 a 2019 no caso brasileiro analisado. 
+
